@@ -2,6 +2,7 @@ package com.example.networkapp
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
@@ -16,6 +17,7 @@ import com.squareup.picasso.Picasso
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.File
+import java.io.FileOutputStream
 import java.io.FileReader
 import java.io.IOException
 
@@ -50,10 +52,18 @@ class MainActivity : AppCompatActivity() {
 
     private fun downloadComic (comicId: String) {
         val url = "https://xkcd.com/$comicId/info.0.json"
-        requestQueue.add (
-            JsonObjectRequest(url, {showComic(it)}, {
-            })
-        )
+        val comicFileName = "xkcd_$comicId"
+        var comicFile = File(filesDir, comicFileName)
+        if (comicFile.exists()) {
+            showComic(JSONObject(comicFile.readText()))
+        } else {
+            requestQueue.add (
+                JsonObjectRequest(url, {
+                    saveComic(it)
+                    showComic(it) }, {
+                })
+            )
+        }
     }
 
     private fun showComic (comicObject: JSONObject) {
@@ -65,6 +75,9 @@ class MainActivity : AppCompatActivity() {
     private fun saveComic (comicObject: JSONObject) {
         val comicId = comicObject.getString("num")
         val comicFileName = "xkcd_$comicId"
-        var comicFile = File(filesDir, comicFileName)
+        val comicFile = File(filesDir, comicFileName)
+        val outputStream = FileOutputStream(comicFile)
+        outputStream.write(comicObject.toString().toByteArray())
+        outputStream.close()
     }
 }
